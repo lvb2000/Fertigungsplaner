@@ -1,0 +1,67 @@
+import tkinter as tk
+from functools import partial
+import GUI_Input
+import GUI_Table
+import GUI_Overview
+from General import text_size
+
+"""Create a button to quit the program."""
+def create_exit_button(root):
+    # create a button
+    exit = tk.Button(root, text="Exit", command=root.destroy, font=("Helvetica", text_size))
+    # place the button
+    exit.pack()
+    exit.place(relx=0.9, rely=0.9)
+
+"""Create a button to switch between different panels."""
+def input_switch(root):
+    panel_mode = "input"
+    GUI_Table.main(root, False)
+    GUI_Overview.main(root, False)
+    GUI_Input.main(root)
+
+def create_input_button(root):
+    # create a button
+    overview = tk.Button(root, text="Eingabe", command=partial(input_switch, root),font=("Helvetica", text_size))
+    # place the button
+    overview.pack()
+    overview.place(relx=0.05, rely=0.02)
+
+def table_switch(root):
+    panel_mode = "table"
+    GUI_Input.main(root,False)
+    GUI_Overview.main(root,False)
+    GUI_Table.main(root)
+
+def create_table_button(root):
+    # create a button
+    overview = tk.Button(root, text="Aufträge", command=partial(table_switch,root),font=("Helvetica", text_size))
+    # place the button
+    overview.pack()
+    overview.place(relx=0.15, rely=0.02)
+
+def overview_switch(root):
+    panel_mode = "overview"
+    GUI_Input.main(root,False)
+    GUI_Table.main(root,False)
+    GUI_Overview.main(root)
+def create_overview_button(root):
+    #create a button
+    overview = tk.Button(root, text="Übersicht", command=partial(overview_switch,root),font=("Helvetica", text_size))
+    # place the button
+    overview.pack()
+    overview.place(relx=0.25, rely=0.02)
+
+def main():
+    # create the Tk object
+    root = tk.Tk()
+    # create a button to quit the program
+    create_exit_button(root)
+    # create buttons to switch between different panels
+    create_input_button(root)
+    create_table_button(root)
+    create_overview_button(root)
+    #increase the starting size of the window
+    root.geometry("1920x1080")
+    # run the GUI
+    root.mainloop()
