@@ -26,6 +26,6 @@ def acceptable_error(error):
     if(error == None):
         return True
     for err in error:
-        if(err!=errors[0] or err!=errors[1]):
+        if(err!=errors[0] and err!=errors[1]):
             return False
     return True
