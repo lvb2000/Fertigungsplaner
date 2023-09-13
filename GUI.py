@@ -16,8 +16,9 @@ def create_exit_button(root):
 """Create a button to switch between different panels."""
 def input_switch(root):
     panel_mode = "input"
-    GUI_Table.main(root, False)
-    GUI_Overview.main(root, False)
+    GUI_Input.main(root,False)
+    GUI_Table.main(root,False)
+    GUI_Overview.main(root,False)
     GUI_Input.main(root)
 
 def create_input_button(root):
@@ -30,6 +31,7 @@ def create_input_button(root):
 def table_switch(root):
     panel_mode = "table"
     GUI_Input.main(root,False)
+    GUI_Table.main(root,False)
     GUI_Overview.main(root,False)
     GUI_Table.main(root)
 
@@ -44,6 +46,7 @@ def overview_switch(root):
     panel_mode = "overview"
     GUI_Input.main(root,False)
     GUI_Table.main(root,False)
+    GUI_Overview.main(root,False)
     GUI_Overview.main(root)
 def create_overview_button(root):
     #create a button

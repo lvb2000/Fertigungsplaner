@@ -3,7 +3,7 @@ import tkinter as tk
 import datetime
 from functools import partial
 import pandas as pd
-from General import data_path,text_size,list_size
+from General import data_path,text_size,list_size,order_categories
 
 """Geometrics of tkinter"""
 padx=33
@@ -55,6 +55,20 @@ def delete_row(entry,root,index,df_data):
     entry = entry.get().split(' - ')
     reset_kw = int(entry[0])
     reset_year = int(entry[1])
+    # get the occuption csv as df
+    df_occupation = pd.read_csv(data_path + "occupation.csv")
+    # get row of index
+    row = df_data.iloc[index]
+    # get the ProduktionsPlanung which is a list but saved as string
+    ProduktionsPlanung = eval(row['ProduktionsPlanung'])
+    # get the machine
+    machine = row['Anlage']
+    # loop over produktionsplanung
+    for Tag in ProduktionsPlanung:
+        # add to df_occupation at date of Tag[0] and column of machine the value of Tag[1]
+        df_occupation.loc[df_occupation['date'] == Tag[0], machine] += Tag[1]
+    # save df_occupation
+    df_occupation.to_csv(data_path + "occupation.csv", index=False)
     # delete row from data
     df_data.drop(index, inplace=True)
     # save data
@@ -106,8 +120,7 @@ def create_table(root):
         df_data = pd.read_csv(data_path+str(target_kw)+"_"+str(target_year)+'_orders.csv')
 
         # conversion category
-        conversion_categories = ['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Anlage', 'Bearbeitungsdauer',
-         'BearbeitungsdauerProg', 'Fremdbearbeitungsdauer']
+        conversion_categories = order_categories
         # Iterate through data rows using iterrows()
         for index, row in df_data.iterrows():
             # create a label for each data entry in row
@@ -115,7 +128,7 @@ def create_table(root):
                 # get position to the corresponding category
                 position = conversion_categories.index(df_data.columns[i])
                 # create label for each entry
-                if(position != 0):
+                if(1<= position <= 8):
                     label = tk.Label(frame, text=row[i],font=("Helvetica", list_size))
                     label.grid(row=index+2, column=position-1,padx=padx)
             # create a button to delete the row

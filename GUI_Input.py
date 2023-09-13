@@ -4,7 +4,10 @@ import datetime
 import calendar
 from functools import partial
 import pandas as pd
-from General import data_path, text_size
+from General import data_path, text_size, order_categories
+import General
+import Error_Handler
+import Planner
 
 month, year = datetime.datetime.now().month, datetime.datetime.now().year
 calendar_active = False
@@ -35,54 +38,48 @@ Anlagen_liste = None
 Bearbeitungsdauer_entry = None
 BearbeitungsdauerProg_entry = None
 Fremdbearbeitungsdauer_entry = None
-error_label = None
-error_button = None
+error_frame = None
 
-def CheckIfMachineCapacityIsFull(df_orders, date,Anlage,Dauer):
-    # get all entries from df_orders with the same date and Anlage
-    df_orders = df_orders[(df_orders['Datum'] == date) & (df_orders['Anlage'] == Anlage)]
-    # get the sum of Bearbeitungsdauer
-    sum = df_orders['Bearbeitungsdauer'].sum()
-    # check if sum + Dauer is bigger than 8
-    if(sum + int(Dauer) > 8):
-        return True, 8-sum
-    else:
-        return False, 0
-def CheckIfWorkerCapacityIsFull(df_orders, date,Dauer):
-    # get all entries from df_orders with the same date and Anlage
-    df_orders = df_orders[(df_orders['Datum'] == date) & (df_orders['Anlage'] == Anlage)]
-    # get the sum of Bearbeitungsdauer
-    sum = df_orders['BearbeitungsdauerProg'].sum()
-    # check if sum + Dauer is bigger than 8
-    if (sum + int(Dauer) > 8):
-        return True, 8 - sum
-    else:
-        return False, 0
-
-def AddAnyway(root,df_orders,kw, date, auftragsnummer, kunde, Liefertermin, Anlage, Bearbeitungsdauer,
-                            BearbeitungsdauerProg, Fremdbearbeitungsdauer):
-    # create a new datafram with the new values
-    df_new = pd.DataFrame([[kw, date, auftragsnummer, kunde, Liefertermin, Anlage, Bearbeitungsdauer,
-                            BearbeitungsdauerProg, Fremdbearbeitungsdauer]],
-                          columns=['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Anlage',
-                                   'Bearbeitungsdauer', 'BearbeitungsdauerProg', 'Fremdbearbeitungsdauer'])
-    # concat df_new to df_orders
-    df_orders = pd.concat([df_orders, df_new], ignore_index=True)
-    # convert the dataframe to a csv file
-    df_orders.to_csv(data_path + str(kw) + "_" + str(year) + '_orders.csv', index=False)
-    # close all widgets from GUI_Input
+def start_Planner(root, df_orders, data):
     destroy_descriptions()
-    # open all widgets from GUI_Input
-    create_descriptions(root)
-def Hinzufuegen_button(root):
-    global error_label
-    global error_button
-    # error bool
-    error = False
-    # error message:
+    Planner.main(root, df_orders, data)
+
+def get_all_data():
+    data = [None]*9
+    # get the values from the entry boxes and lists
+    data[0] = kw_entry.get()
+    data[1] = date_entry.get()
+    data[2] = auftragsnummer_entry.get()
+    kunde = ""
+    if(len(kunden_liste.curselection())!=0):
+        kunde = kunden_liste.get(kunden_liste.curselection()[0])
+    data[3] = kunde
+    data[4] = Liefertermin_entry.get()
+    Anlage = ""
+    if(len(Anlagen_liste.curselection())!=0):
+        Anlage = Anlagen_liste.get(Anlagen_liste.curselection()[0])
+    data[5] = Anlage
+    data[6] = Bearbeitungsdauer_entry.get()
+    data[7] = BearbeitungsdauerProg_entry.get()
+    data[8] = Fremdbearbeitungsdauer_entry.get()
+    return data
+
+def create_error_messages(error_kind):
     error_message = ""
+    for error in error_kind:
+        if(error == "machine overload"):
+            error_message += "Der Auftrag kann nicht in der regulären Arbeitstzeit erledigt werden.\n\r"
+        if(error == "human overload"):
+            error_message += "Markus hat nicht genügend Zeit, um den Auftrag in der regulären Zeit zu erledigen.\n\r"
+        if(error == "impossible delivery date"):
+            error_message += "Der Liefertermin ist nicht möglich.\n\r"
+    return error_message
+
+def Hinzufuegen_button(root):
+    global error_frame
+    error_kind = []
     # get csv called "orders.csv" file from data folder if it exists
-    df_orders = pd.DataFrame(columns=['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Anlage', 'Bearbeitungsdauer', 'BearbeitungsdauerProg', 'Fremdbearbeitungsdauer'])
+    df_orders = pd.DataFrame(columns=order_categories)
     # get KW from entry box
     kw = kw_entry.get()
     if(len(kw)==0):
@@ -95,70 +92,34 @@ def Hinzufuegen_button(root):
     # if there is data in the csv file named (kw_year_oders.csv), add it to the entry box
     if os.path.isfile(data_path+str(kw)+"_"+str(year)+"_orders.csv"):
         df_orders = pd.read_csv(data_path+str(kw)+"_"+str(year)+"_orders.csv")
-    # get the values from the entry boxes and lists
-    kw = kw_entry.get()
-    date = date_entry.get()
-    auftragsnummer = auftragsnummer_entry.get()
-    kunde = ""
-    if(len(kunden_liste.curselection())!=0):
-        kunde = kunden_liste.get(kunden_liste.curselection()[0])
-    Liefertermin = Liefertermin_entry.get()
-    # check if date is in the past
-    if(Liefertermin != ""):
-        if(datetime.datetime.strptime(date, "%d.%m.%Y") > datetime.datetime.strptime(Liefertermin, "%d.%m.%Y")):
-            error = True
-            error_message = error_message + "Das Produktionsdatum liegt in der Vergangenheit. \n\r"
-    Anlage = ""
-    if(len(Anlagen_liste.curselection())!=0):
-        Anlage = Anlagen_liste.get(Anlagen_liste.curselection()[0])
-    Bearbeitungsdauer = Bearbeitungsdauer_entry.get()
-    # Check if there is still time left on this day
-    machine_overload,HoursLeft = CheckIfMachineCapacityIsFull(df_orders,date,Anlage,Bearbeitungsdauer)
-    if(machine_overload):
-        error = True
-        if(HoursLeft == 0):
-            error_message = error_message + "Die Maschine " + Anlage + " hat am " + date + "keine Kapazität mehr. \n\r"
-        else:
-            error_message = error_message + "Die Maschine " + Anlage + " hat am " + date +  " nur noch " + str(HoursLeft) +(" Stunden Kapazität. \n\r Bitte teile den Auftrag in zwei kleiner Aufträge oder wähle einen anderen Tag oder eine andere Maschine. \n\r" )
-    BearbeitungsdauerProg = BearbeitungsdauerProg_entry.get()
-    # Check if there is still time left on this day
-    human_overload,HoursLeft = CheckIfWorkerCapacityIsFull(df_orders,date,BearbeitungsdauerProg)
-    if(human_overload):
-        error = True
-        if(HoursLeft == 0):
-            error_message = error_message + "Markus hat am " + date + "keine Zeit mehr. \n\r"
-        else:
-            error_message = error_message + "Markus hat am " + date +  "nur noch" + str(HoursLeft) +(" Stunden Arbeitszeit. \n\r Bitte teile den Auftrag in zwei kleiner Aufträge oder wähle einen anderen Tag. \n\r" )
-    Fremdbearbeitungsdauer = Fremdbearbeitungsdauer_entry.get()
-    if (error):
-        # destroy previous error lable
-        if(error_label != None):
-            error_label.destroy()
-        if(error_button!= None):
-            error_button.destroy()
-        error_label = tk.Label(root, text=error_message, fg="red")
-        error_label.place(relx=0.3, rely=0.08)
-        if(machine_overload):
-            error_button = tk.Button(root, text="Trotzdem\nHinzufügen", command=partial(AddAnyway,root,df_orders,kw, date, auftragsnummer, kunde, Liefertermin, Anlage, Bearbeitungsdauer,
-                            BearbeitungsdauerProg, Fremdbearbeitungsdauer),font=("Helvetica", text_size))
-            error_button.place(relx= 0.56, rely= 0.02)
+    # get all inputs
+    data = get_all_data()
+    # check if input is valid
+    if Error_Handler.main(error_kind, data):
+        # create error frame
+        error_frame = tk.Frame(root)
+        # create error message
+        error_message = create_error_messages(error_kind)
+        # create a label with red text color
+        error_label = tk.Label(error_frame, text=error_message, fg="red",font=("Helvetica", text_size))
+        if General.acceptable_error(error_kind):
+            # create a button to add the order anyway
+            error_button = tk.Button(error_frame, text="Trotzdem Hinzufügen", command=partial(start_Planner, root, df_orders, data),font=("Helvetica", text_size))
+            # place the button
+            error_button.pack(side=tk.BOTTOM)
+        # place the label
+        error_label.pack(side=tk.TOP)
+        # place the frame
+        error_frame.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
     else:
-        # create a new datafram with the new values
-        df_new = pd.DataFrame([[kw, date, auftragsnummer, kunde, Liefertermin, Anlage, Bearbeitungsdauer, BearbeitungsdauerProg, Fremdbearbeitungsdauer]], columns=['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Anlage', 'Bearbeitungsdauer', 'BearbeitungsdauerProg', 'Fremdbearbeitungsdauer'])
-        # concat df_new to df_orders
-        df_orders = pd.concat([df_orders, df_new], ignore_index=True)
-        # convert the dataframe to a csv file
-        df_orders.to_csv(data_path+str(kw)+"_"+str(year)+'_orders.csv', index=False)
-        # close all widgets from GUI_Input
         destroy_descriptions()
-        # open all widgets from GUI_Input
-        create_descriptions(root)
+        Planner.main(root, df_orders, data)
 
 def Hinzufuegen(root):
     global HinzufuegenButton_frame
     HinzufuegenButton_frame = tk.Frame(root)
     # create a button
-    Hinzufuegen = tk.Button(HinzufuegenButton_frame, text="Hinzufügen", command=partial(Hinzufuegen_button, root),font=("Helvetica", text_size))
+    Hinzufuegen = tk.Button(HinzufuegenButton_frame, text="Weiter", command=partial(Hinzufuegen_button, root),font=("Helvetica", text_size))
     # place the button
     Hinzufuegen.pack()
     HinzufuegenButton_frame.place(relx=0.75, rely=0.9)
@@ -203,7 +164,7 @@ def Anlage(root):
     global Anlagen_liste
     Anlage_frame = tk.Frame(root)
     # create a label
-    Bearbeitungsdauer_lable = tk.Label(Anlage_frame, text="Bearbeitungsdauer:",font=("Helvetica", text_size))
+    Bearbeitungsdauer_lable = tk.Label(Anlage_frame, text="Laufzeit:",font=("Helvetica", text_size))
     # create a entry box
     Bearbeitungsdauer_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
     # place the label
@@ -414,7 +375,7 @@ def date(root):
     global date_entry
     date_frame = tk.Frame(root)
     # create a label
-    date_lable = tk.Label(date_frame, text="Fertigungs Start:", font=("Helvetica", text_size))
+    date_lable = tk.Label(date_frame, text="Fertigungsstart:", font=("Helvetica", text_size))
     # create a entry box
     date_entry = tk.Entry(date_frame, width=10, font=("Helvetica", text_size))
     # place the label
@@ -475,12 +436,11 @@ def destroy_descriptions():
         FremdbearbeitungDauer_frame.destroy()
     if(HinzufuegenButton_frame != None):
         HinzufuegenButton_frame.destroy()
-    if(error_label != None):
-        error_label.destroy()
-    if(error_button != None):
-        error_button.destroy()
+    if(error_frame != None):
+        error_frame.destroy()
     if(calendar_frame != None):
         calendar_frame.destroy()
+    Planner.destroy_planner()
 
 def main(root, on = True):
     if(on):
