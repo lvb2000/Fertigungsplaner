@@ -33,14 +33,58 @@ def check_machine_overload(df_occupation,date, Liefertermin, Anlage,Bearbeitungs
         i += 1
     return False
 
+def check_entry_missing(data):
+    # check if any entry is missing
+    for entry in data:
+        if(entry == ""):
+            return True
+    return False
+
+def check_delivery_date(data):
+    # check if the delivery date is in the past
+    if(datetime.datetime.strptime(data[4], '%d.%m.%Y') < datetime.datetime.strptime(data[1], '%d.%m.%Y')):
+        return True
+    return False
 def check_human_overload(df_occupation,date, Liefertermin, BearbeitungsdauerProg):
     return False
+
+def check_Fertigungsstart(data):
+    # check if Fertigungsstart is a valid date in format dd.mm.yyyy
+    try:
+        datetime.datetime.strptime(data[1], '%d.%m.%Y')
+        return False
+    except ValueError:
+        return True
+
+def check_Liefertermin(data):
+    # check if Liefertermin is a valid date in format dd.mm.yyyy
+    try:
+        datetime.datetime.strptime(data[4], '%d.%m.%Y')
+        return False
+    except ValueError:
+        return True
 def main(error_kind, data):
     result = False
     df_occupation = pd.DataFrame(columns=['date','Mazak','Haas','DMG Mori','Marcus'])
     if os.path.isfile(data_path+"occupation.csv"):
         df_occupation = pd.read_csv(data_path + "occupation.csv")
-    if(check_machine_overload(df_occupation,data[1], data[4],data[5],data[6]) or
+    if (check_Liefertermin(data)):
+        # append error to error_kind
+        error_kind.append(errors[5])
+        result = True
+    elif (check_Fertigungsstart(data)):
+        # append error to error_kind
+        error_kind.append(errors[4])
+        result = True
+    elif (check_delivery_date(data)):
+        # append error to error_kind
+        error_kind.append(errors[2])
+        result = True
+    elif(check_entry_missing(data)):
+        # append error to error_kind
+        error_kind.append(errors[3])
+        result = True
+    elif(check_machine_overload(df_occupation,data[1], data[4],data[5],data[6]) or
     check_human_overload(df_occupation,data[1], data[4], data[7])):
         # append error to error_kind
         error_kind.append(errors[0])

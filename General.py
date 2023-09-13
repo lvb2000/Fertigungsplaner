@@ -13,7 +13,7 @@ planner_size = 16
 arbeitsTag = 8
 
 # error list
-errors = ["machine overload","human overload","impossible delivery date"]
+errors = ["machine overload","human overload","impossible delivery date","entries_missing","Fertigungsstart unvalid","Lieferdatum unvalid"]
 
 # orders catergories
 # Status: 0 = Order unfinished; 1 = Order finished
@@ -25,8 +25,7 @@ def acceptable_error(error):
     # check if in error array there is either none or errors[0] or errors[1]
     if(error == None):
         return True
-    if(errors[0] in error):
-        return True
-    if(errors[1] in error):
-        return True
-    return False
+    for err in error:
+        if(err!=errors[0] or err!=errors[1]):
+            return False
+    return True

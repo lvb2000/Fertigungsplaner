@@ -72,7 +72,13 @@ def create_error_messages(error_kind):
         if(error == "human overload"):
             error_message += "Markus hat nicht genügend Zeit, um den Auftrag in der regulären Zeit zu erledigen.\n\r"
         if(error == "impossible delivery date"):
-            error_message += "Der Liefertermin ist nicht möglich.\n\r"
+            error_message += "Der Liefertermin ist nicht möglich, da er vor dem Fertigungsstart liegt.\n\r"
+        if(error == "entries_missing"):
+            error_message += "Es fehlen Eingaben.\n\r"
+        if(error == "Fertigungsstart unvalid"):
+            error_message += "Der Fertigungsstart ist kein gültiges Datum.\n\r"
+        if(error == "Lieferdatum unvalid"):
+            error_message += "Der Liefertermin ist kein gültiges Datum.\n\r"
     return error_message
 
 def Hinzufuegen_button(root):

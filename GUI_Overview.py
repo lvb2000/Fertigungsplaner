@@ -228,8 +228,8 @@ def create_bar_chart(df_data, frame, Maschine):
     sum = total_hours - sum
     # define total hours of a week
     total = 40
-    # calculate the percentage of the sum
-    percentage = sum / total * 100
+    # calculate the percentage
+    percentage = int(sum / total * 100)
 
     # Create a color map from bright green to dark red
     cmap = cm.get_cmap('RdYlGn_r')
