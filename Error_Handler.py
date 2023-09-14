@@ -21,7 +21,10 @@ def check_machine_overload(df_occupation,date, Liefertermin, Anlage,Bearbeitungs
         # check if the date is in df_occupation
         if (date in df_occupation['date'].values):
             # get value of machine column at the index of the date
-            availableHours += df_occupation.loc[df_occupation['date'] == date, Anlage].iloc[0]
+            occupation = df_occupation.loc[df_occupation['date'] == date, Anlage].iloc[0]
+            if (occupation < 0):
+                occupation = 0
+            availableHours += occupation
         else:
             # insert the day in df at the right index and fill the value for machine and human with 8
             # check if the day is a sunday
