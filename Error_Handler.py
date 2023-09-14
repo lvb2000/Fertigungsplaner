@@ -12,7 +12,7 @@ def check_machine_overload(df_occupation,date, Liefertermin, Anlage,Bearbeitungs
     i = 0
     # loop over number of days
     while(availableHours < int(Bearbeitungsdauer)):
-        if(i > max_days):
+        if(i >= max_days):
             return True
         # get the date of the day plus i
         date = datetime.datetime.strptime(date, '%d.%m.%Y')
@@ -29,7 +29,7 @@ def check_machine_overload(df_occupation,date, Liefertermin, Anlage,Bearbeitungs
                 df_occupation.loc[len(df_occupation)] = [date, 0,0,0, 0]
             else:
                 df_occupation.loc[len(df_occupation)] = [date, arbeitsTag,arbeitsTag,arbeitsTag, arbeitsTag]
-            availableHours += 8
+                availableHours += 8
         i += 1
     return False
 
