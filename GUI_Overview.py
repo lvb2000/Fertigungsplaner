@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from General import data_path,text_size,arbeitsTag
+from General import data_path,text_size,arbeitsTag,order_categories
 import copy
 import calendar
 
@@ -95,7 +95,42 @@ def destroy_week_select():
         next.destroy()
         entry.destroy()
 
-def create_column_chart(df_data, frame, Maschine):
+def get_kunden_on_day(df_orders, date):
+    df = copy.copy(df_orders)
+    # append target year to date
+    date = date + "." + str(target_year)
+    # convert date from %d.%m.%Y to %Y%m%d
+    date = datetime.datetime.strptime(date, '%d.%m.%Y').strftime('%Y%m%d')
+    df['Datum'] = pd.to_datetime(df['Datum'], format='%d.%m.%Y')
+    df['Datum'] = df['Datum'].dt.strftime('%Y%m%d')
+    df['Liefertermin'] = pd.to_datetime(df['Liefertermin'], format='%d.%m.%Y')
+    df['Liefertermin'] = df['Liefertermin'].dt.strftime('%Y%m%d')
+    # get all rows where date is after Datum and before Liefertermin
+    df = df[(df.Datum <= date) & (df.Liefertermin >= date)]
+    df['Datum'] = pd.to_datetime(df['Datum'], format='%Y%m%d')
+    df['Datum'] = df['Datum'].dt.strftime('%d.%m.%Y')
+    df['Liefertermin'] = pd.to_datetime(df['Liefertermin'], format='%Y%m%d')
+    df['Liefertermin'] = df['Liefertermin'].dt.strftime('%d.%m.%Y')
+    date = datetime.datetime.strptime(date, '%Y%m%d').strftime('%d.%m.%Y')
+    # iterate through all rows
+    kunden = []
+    for index, row in df.iterrows():
+        # get ProduktionsPlanung
+        ProduktionsPlanung = eval(row['ProduktionsPlanung'])
+        # get kunde
+        kunde = row['Kunde']
+        # iterate through all entries in ProduktionsPlanung
+        for entry in ProduktionsPlanung:
+            # check if entry[0] is equal to date
+            if(entry[0] == date):
+                if(int(entry[1]) != 0):
+                    if(int(entry[2])==1):
+                        # append kunde to kunden
+                        kunden.append(kunde)
+    return kunden
+
+
+def create_column_chart(df_data,df_orders, frame, Maschine):
     global target_kw
     # remove all columns except that of the date and the machine
     df_machine = copy.copy(df_data[['date', Maschine]])
@@ -134,9 +169,9 @@ def create_column_chart(df_data, frame, Maschine):
     # sort the dataframe by date to ensure the correct order
     # therefor bring that in format "%y%m%d" sort them and reformat them to "%d.%m.%y"
     df_machine['date'] = pd.to_datetime(df_machine['date'], format='%d.%m.%Y')
-    df_machine['date'] = df_machine['date'].dt.strftime('%y%m%d')
+    df_machine['date'] = df_machine['date'].dt.strftime('%Y%m%d')
     df_machine.sort_values(by=['date'], inplace=True)
-    df_machine['date'] = pd.to_datetime(df_machine['date'], format='%y%m%d')
+    df_machine['date'] = pd.to_datetime(df_machine['date'], format='%Y%m%d')
     df_machine['date'] = df_machine['date'].dt.strftime('%d.%m.%Y')
 
     # cut the year of all dates
@@ -160,9 +195,17 @@ def create_column_chart(df_data, frame, Maschine):
     # add a horizontal red line at 8 hours
     ax.axhline(y=8, color='r', linestyle='-')
 
+    # get columns Datum and Kunde
+    df_orders = df_orders[df_orders.Anlage == Maschine]
+    df_kunden = copy.copy(df_orders[['Datum','Liefertermin', 'Kunde','ProduktionsPlanung']])
+    # remove all entries which do not have the machine as Anlage
     # add the value on the top of each bar
     for i, v in enumerate(values):
         ax.text(i-0.05, v + 0.25, str(v), color='black', fontweight='bold')
+        kunden = get_kunden_on_day(df_kunden, dates[i])
+        for j, kunde in enumerate(kunden):
+            ax.text(i-0.1, v + 0.25 + (j+1)*4, kunde, color='black', fontweight='bold')
+
 
     # Rotate x-axis labels for better readability (optional)
     plt.xticks(rotation=45)
@@ -198,12 +241,17 @@ def create_all_column_chart(root):
     else:
         # create empty dataframe
         df_data = pd.DataFrame(columns=['date','Mazak','Haas','DMG Mori','Marcus'])
+    # read orders from csv
+    if os.path.isfile(data_path+str(target_kw)+"_"+str(target_year)+'_orders.csv'):
+        df_orders = pd.read_csv(data_path+str(target_kw)+"_"+str(target_year)+'_orders.csv')
+    else:
+        df_orders = pd.DataFrame(columns= order_categories)
     # create a list of all machines
     machines = ["Mazak","Haas","DMG Mori"]
     frames = [Mazak_frame,Haas_frame,DMG_frame]
 
     for(i,machine) in enumerate(machines):
-        create_column_chart(df_data, frames[i], machine)
+        create_column_chart(df_data,df_orders, frames[i], machine)
 
 def create_bar_chart(df_data, frame, Maschine):
     # get a list of all dates in the target week

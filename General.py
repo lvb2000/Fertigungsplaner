@@ -1,3 +1,4 @@
+import pandas as pd
 """ General Parameters for the whole Project"""
 
 # Mac Data path: /Users/lukas/Dokumente/Fertigungsplaner/Data/
@@ -29,3 +30,14 @@ def acceptable_error(error):
         if(err!=errors[0] and err!=errors[1]):
             return False
     return True
+
+def date1_before_date2(date1,date2):
+    # reformat date1 from dd.mm.yyyy to yymmdd
+    date1 = date1[6:10]+date1[3:5]+date1[0:2]
+    # reformat date2 from dd.mm.yyyy to yymmdd
+    date2 = date2[6:10]+date2[3:5]+date2[0:2]
+    # check if date1 is before date2
+    if(int(date1) < int(date2)):
+        return True
+    else:
+        return False

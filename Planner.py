@@ -62,8 +62,7 @@ def save_data(df_occupation,df_orders,data):
             date = datetime.datetime.strptime(data[1], '%d.%m.%Y')
             date = date + datetime.timedelta(days=index)
             date = date.strftime('%d.%m.%Y')
-            Produktionsplanung.append([date,entry])
-
+            Produktionsplanung.append([date,entry,1])
     # create a new datafram with the new values
     df_new = pd.DataFrame([[data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],data[8],Produktionsplanung,0,"","","","",""]],
                           columns=order_categories)

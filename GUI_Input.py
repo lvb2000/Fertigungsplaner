@@ -39,13 +39,14 @@ Bearbeitungsdauer_entry = None
 BearbeitungsdauerProg_entry = None
 Fremdbearbeitungsdauer_entry = None
 error_frame = None
+kundennummer_entry = None
 
 def start_Planner(root, df_orders, data):
     destroy_descriptions()
     Planner.main(root, df_orders, data)
 
 def get_all_data():
-    data = [None]*9
+    data = [None]*10
     # get the values from the entry boxes and lists
     data[0] = kw_entry.get()
     data[1] = date_entry.get()
@@ -62,6 +63,8 @@ def get_all_data():
     data[6] = Bearbeitungsdauer_entry.get()
     data[7] = BearbeitungsdauerProg_entry.get()
     data[8] = Fremdbearbeitungsdauer_entry.get()
+    data[9] = kundennummer_entry.get()
+    data[2] = data[2] + " / " + kundennummer_entry.get()
     return data
 
 def create_error_messages(error_kind):
@@ -224,7 +227,8 @@ def next_month(month_text,button_array):
 
 def insert_entry(day,lt_entry):
     lt_entry.delete(0, tk.END)
-    lt_entry.insert(0, str(day)+"."+str(month)+"."+str(year))
+    month_str = "{:02d}".format(month)
+    lt_entry.insert(0, str(day) + "." + str(month_str) + "." + str(year))
     calendar_frame.destroy()
 
 def Kalender(root,lt_entry):
@@ -250,7 +254,7 @@ def Kalender(root,lt_entry):
         button_array.append(day_button)
     first_day = datetime.datetime(year, month, 1).weekday()
     for day in range(0, calendar.monthrange(year, month)[1]):
-        row_num, col_num = divmod(day +1  + first_day, 7)
+        row_num, col_num = divmod(day  + first_day, 7)
         button_array[day].grid(row=row_num + 2, column=col_num + 1)
     # Create and configure widgets
     prev_button = tk.Button(calendar_frame, text="Vorheriger Monat", command=partial(prev_month,month_text,button_array),font=("Helvetica", text_size))
@@ -365,14 +369,21 @@ def Auftragsnummer(root):
     # create a frame
     global auftragsnummer_frame
     global auftragsnummer_entry
+    global kundennummer_entry
     auftragsnummer_frame = tk.Frame(root)
     # create a label
     auftragsnummer_lable = tk.Label(auftragsnummer_frame, text="Auftragsnummer:", font=("Helvetica", text_size))
     # create a entry box
     auftragsnummer_entry = tk.Entry(auftragsnummer_frame, width=15, font=("Helvetica", text_size))
+    # create a label
+    kundennummer_lable = tk.Label(auftragsnummer_frame, text="Kundennummer:", font=("Helvetica", text_size))
+    # create a entry box
+    kundennummer_entry = tk.Entry(auftragsnummer_frame, width=15, font=("Helvetica", text_size))
     # place the label
     auftragsnummer_lable.pack(side=tk.TOP)
-    auftragsnummer_entry.pack(side=tk.BOTTOM)
+    auftragsnummer_entry.pack(side=tk.TOP)
+    kundennummer_lable.pack()
+    kundennummer_entry.pack(side=tk.BOTTOM)
     auftragsnummer_frame.grid(row=0, column=2,padx=padx, pady=pady_top)
 
 def date(root):
