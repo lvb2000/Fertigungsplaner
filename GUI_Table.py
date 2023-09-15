@@ -2,6 +2,8 @@ import os
 import tkinter as tk
 import datetime
 from functools import partial
+from tkinter import font
+
 import pandas as pd
 from General import data_path,text_size,list_size,order_categories,date1_before_date2,arbeitsTag
 
@@ -62,14 +64,14 @@ def delete_row(entry,root,index,df_data):
     df_occupation = pd.read_csv(data_path + "occupation.csv")
     # get row of index
     row = df_data.iloc[index]
-    # get the ProduktionsPlanung which is a list but saved as string
-    ProduktionsPlanung = eval(row['ProduktionsPlanung'])
-    # get the machine
-    machine = row['Anlage']
-    # loop over produktionsplanung
-    for Tag in ProduktionsPlanung:
-        # add to df_occupation at date of Tag[0] and column of machine the value of Tag[1]
-        df_occupation.loc[df_occupation['date'] == Tag[0], machine] += Tag[1]
+    machines = ['Mazak','Haas','DMG_Mori']
+    for machine in machines:
+        # get the ProduktionsPlanung which is a list but saved as string
+        ProduktionsPlanung = eval(row['ProduktionsPlanung'+ machine])
+        # loop over produktionsplanung
+        for Tag in ProduktionsPlanung:
+            # add to df_occupation at date of Tag[0] and column of machine the value of Tag[1]
+            df_occupation.loc[df_occupation['date'] == Tag[0], machine] += Tag[1]
     # save df_occupation
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
     # delete row from data
@@ -102,24 +104,27 @@ def toggle_status(root,df_data,index,target_kw,target_year):
         df_data.loc[index, 'Placeholder1'] = ""
     # get the occuption csv as df
     df_occupation = pd.read_csv(data_path + "occupation.csv")
-    # from df_data get ProduktionsPlanung
-    ProduktionsPlanung = eval(df_data.loc[index, 'ProduktionsPlanung'])
-    # for each day in ProduktionsPlanung which is larger than today add/remove the value of the order to occupation
-    for Tag in ProduktionsPlanung:
-        # check if Tag[0] is before today
-        if(date1_before_date2(today,Tag[0])):
-            # update occupation
-            df_occupation.loc[df_occupation['date'] == Tag[0], df_data.loc[index, 'Anlage']] += Tag[1]*factor
-            # update ProduktionsPlanung
-            if(factor == 1):
-                Tag[2] = 0
-            else:
-                Tag[2] = 1
-            # if df_occupation is bigger than arbeitsTag set it to arbeitsTag
-            if(df_occupation.loc[df_occupation['date'] == Tag[0], df_data.loc[index, 'Anlage']].values[0] > arbeitsTag):
-                df_occupation.loc[df_occupation['date'] == Tag[0], df_data.loc[index, 'Anlage']] = arbeitsTag
-    # update ProduktionsPlanung
-    df_data.loc[index, 'ProduktionsPlanung'] = str(ProduktionsPlanung)
+    # get machines array
+    machines = ['Mazak','Haas','DMG_Mori']
+    for machine in machines:
+        # from df_data get ProduktionsPlanung
+        ProduktionsPlanung = eval(df_data.loc[index, 'ProduktionsPlanung'+machine])
+        # for each day in ProduktionsPlanung which is larger than today add/remove the value of the order to occupation
+        for Tag in ProduktionsPlanung:
+            # check if Tag[0] is before today
+            if(date1_before_date2(today,Tag[0])):
+                # update occupation
+                df_occupation.loc[df_occupation['date'] == Tag[0], machine] += Tag[1]*factor
+                # update ProduktionsPlanung
+                if(factor == 1):
+                    Tag[2] = 0
+                else:
+                    Tag[2] = 1
+                # if df_occupation is bigger than arbeitsTag set it to arbeitsTag
+                if(df_occupation.loc[df_occupation['date'] == Tag[0], machine].values[0] > arbeitsTag):
+                    df_occupation.loc[df_occupation['date'] == Tag[0], machine] = arbeitsTag
+        # update ProduktionsPlanung
+        df_data.loc[index, 'ProduktionsPlanung'+machine] = str(ProduktionsPlanung)
     # save df_occupation
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
     # save data
@@ -172,6 +177,8 @@ def create_table(root):
     separator = tk.Canvas(frame, width=1450, height=2, bg="black")
     separator.grid(row=1, column=0, columnspan=10)
 
+    # narrow line spacing font
+    #custom_font = font.Font(family="Helvetica", size=list_size, spacing=10)
     # reset status
     Status = []
     # read data from csv
@@ -181,26 +188,43 @@ def create_table(root):
         df_data = df_data.sort_values(by=['Status'])
         # reset index
         df_data = df_data.reset_index(drop=True)
-        # conversion category
-        conversion_categories = order_categories
         # Iterate through data rows using iterrows()
         for index, row in df_data.iterrows():
             # create a label for each data entry in row
-            for i in range(len(row)):
-                # get position to the corresponding category
-                position = conversion_categories.index(df_data.columns[i])
-                # create label for each entry
-                if(1<= position <= 8):
-                    label = tk.Label(frame, text=row[i],font=("Helvetica", list_size))
-                    label.grid(row=index+2, column=position-1,padx=padx)
-                if(position == 10):
-                    if(row[i]==1 or date1_before_date2(row[4],datetime.date.today().strftime("%d.%m.%Y"))):
-                        Status.append(tk.IntVar(value=1))
-                    else:
-                        Status.append(tk.IntVar(value=0))
-                    # create a tkinter checkbox
-                    checkbox = tk.Checkbutton(frame, text='',variable=Status[index], onvalue=1, offvalue=0, command=partial(toggle_status,root,df_data,index,target_kw,target_year))
-                    checkbox.grid(row=index+2, column=8,padx=padx)
+            label = tk.Label(frame, text=row[0],font=("Helvetica", list_size))
+            label.grid(row=index+2, column=0,padx=padx)
+            label = tk.Label(frame, text=row[1], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=1, padx=padx)
+            label = tk.Label(frame, text=row[2], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=2, padx=padx)
+            label = tk.Label(frame, text=row[3], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=3, padx=padx)
+            label = tk.Label(frame, text=row[4], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=4, padx=padx)
+            text_name=""
+            text_value=""
+            if(row[5]!=0):
+                text_name="Mazak\n"
+                text_value=str(row[5])+"\n"
+            if(row[6]!=0):
+                text_name+="Haas\n"
+                text_value+=str(row[6])+"\n"
+            if(row[7]!=0):
+                text_name+="DMG Mori"
+                text_value+=str(row[7])
+            label = tk.Label(frame, text=text_name, font=("Helvetica", list_size), wraplength=100)
+            label.grid(row=index + 2, column=5, padx=padx)
+            label = tk.Label(frame, text=text_value, font=("Helvetica", list_size), wraplength=100)
+            label.grid(row=index + 2, column=6, padx=padx)
+            label = tk.Label(frame, text=row[8], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=7, padx=padx)
+            if(row[13]==1 or date1_before_date2(row[4],datetime.date.today().strftime("%d.%m.%Y"))):
+                Status.append(tk.IntVar(value=1))
+            else:
+                Status.append(tk.IntVar(value=0))
+            # create a tkinter checkbox
+            checkbox = tk.Checkbutton(frame, text='',variable=Status[index], onvalue=1, offvalue=0, command=partial(toggle_status,root,df_data,index,target_kw,target_year))
+            checkbox.grid(row=index+2, column=8,padx=padx)
             if(Status[index].get() == 0):
                 # create a button to delete the row
                 delete = tk.Button(frame, text="X", command=partial(delete_row,entry,root,index,df_data),font=("Helvetica", list_size))

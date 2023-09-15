@@ -1,3 +1,4 @@
+import math
 import os
 import tkinter as tk
 import datetime
@@ -95,7 +96,7 @@ def destroy_week_select():
         next.destroy()
         entry.destroy()
 
-def get_kunden_on_day(df_orders, date):
+def get_kunden_on_day(df_orders, date,machine):
     df = copy.copy(df_orders)
     # append target year to date
     date = date + "." + str(target_year)
@@ -115,18 +116,22 @@ def get_kunden_on_day(df_orders, date):
     # iterate through all rows
     kunden = []
     for index, row in df.iterrows():
-        # get ProduktionsPlanung
-        ProduktionsPlanung = eval(row['ProduktionsPlanung'])
-        # get kunde
-        kunde = row['Kunde']
-        # iterate through all entries in ProduktionsPlanung
-        for entry in ProduktionsPlanung:
-            # check if entry[0] is equal to date
-            if(entry[0] == date):
-                if(int(entry[1]) != 0):
-                    if(int(entry[2])==1):
-                        # append kunde to kunden
-                        kunden.append(kunde)
+        # check if ProduktionsPlanung is empty
+        try:
+            # get ProduktionsPlanung
+            ProduktionsPlanung = eval(row['ProduktionsPlanung'+machine])
+            # get kunde
+            kunde = row['Kunde']
+            # iterate through all entries in ProduktionsPlanung
+            for entry in ProduktionsPlanung:
+                # check if entry[0] is equal to date
+                if(entry[0] == date):
+                    if(int(entry[1]) != 0):
+                        if(int(entry[2])==1):
+                            # append kunde to kunden
+                            kunden.append(kunde)
+        except:
+            pass
     return kunden
 
 
@@ -195,14 +200,18 @@ def create_column_chart(df_data,df_orders, frame, Maschine):
     # add a horizontal red line at 8 hours
     ax.axhline(y=8, color='r', linestyle='-')
 
-    # get columns Datum and Kunde
-    df_orders = df_orders[df_orders.Anlage == Maschine]
-    df_kunden = copy.copy(df_orders[['Datum','Liefertermin', 'Kunde','ProduktionsPlanung']])
+    df_kunden = None
+    if(Maschine == "Mazak"):
+        df_kunden = copy.copy(df_orders[['Datum','Liefertermin', 'Kunde','ProduktionsPlanungMazak']])
+    if(Maschine == "Haas"):
+        df_kunden = copy.copy(df_orders[['Datum','Liefertermin', 'Kunde','ProduktionsPlanungHaas']])
+    if(Maschine == "DMG_Mori"):
+        df_kunden = copy.copy(df_orders[['Datum','Liefertermin', 'Kunde','ProduktionsPlanungDMG_Mori']])
     # remove all entries which do not have the machine as Anlage
     # add the value on the top of each bar
     for i, v in enumerate(values):
-        ax.text(i-0.05, v + 0.25, str(v), color='black', fontweight='bold')
-        kunden = get_kunden_on_day(df_kunden, dates[i])
+        ax.text(i - 0.05, v + 0.25, str(v), color='black', fontweight='bold')
+        kunden = get_kunden_on_day(df_kunden, dates[i],Maschine)
         for j, kunde in enumerate(kunden):
             ax.text(i-0.1, v + 0.25 + (j+1)*4, kunde, color='black', fontweight='bold')
 
@@ -247,7 +256,7 @@ def create_all_column_chart(root):
     else:
         df_orders = pd.DataFrame(columns= order_categories)
     # create a list of all machines
-    machines = ["Mazak","Haas","DMG Mori"]
+    machines = ["Mazak","Haas","DMG_Mori"]
     frames = [Mazak_frame,Haas_frame,DMG_frame]
 
     for(i,machine) in enumerate(machines):
@@ -328,7 +337,7 @@ def create_all_bar_chart(df_data):
         # create empty dataframe
         df_data = pd.DataFrame(columns=['date','Mazak','Haas','DMG Mori','Marcus'])
     # create a list of all machines
-    machines = ["Mazak","Haas","DMG Mori"]
+    machines = ["Mazak","Haas","DMG_Mori"]
     frames = [Mazak_frame,Haas_frame,DMG_frame]
 
     for(i,machine) in enumerate(machines):
@@ -360,7 +369,7 @@ def add_to_df_display(df_display, df_data):
     # loop over all entries in enumerated df_data
     for i, row in enumerate(df_data.iterrows()):
         # get 'kunde' entry of row and add the value to the corresponding index in df_display at col hours
-        df_display.loc[row[0], 'Hours'] += row[1]['Bearbeitungsdauer'] + row[1]['BearbeitungsdauerProg']
+        df_display.loc[row[0], 'Hours'] += row[1]['Mazak']+row[1]['Haas']+row[1]['DMG_Mori'] + row[1]['ProgrammierDauer']
 
 def create_pie_chart(root):
     global Customer_frame
@@ -382,7 +391,7 @@ def create_pie_chart(root):
             # read data from csv
             df_data = pd.read_csv(data_path + str(kw) + "_" + str(year) + "_orders.csv")
             # remove all entries except Bearbeitungsdauer, BearbeitungsdauerProg, Kunde
-            df_data = df_data[['Bearbeitungsdauer', 'BearbeitungsdauerProg', 'Kunde']]
+            df_data = df_data[['Mazak','Haas','DMG_Mori', 'ProgrammierDauer', 'Kunde']]
             # group by Kunde and sum up the values
             df_data = df_data.groupby(['Kunde']).sum()
             # add the values to df_display

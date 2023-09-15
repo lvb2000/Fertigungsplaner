@@ -34,8 +34,9 @@ date_entry = None
 auftragsnummer_entry = None
 kunden_liste = None
 Liefertermin_entry = None
-Anlagen_liste = None
-Bearbeitungsdauer_entry = None
+Mazak_entry = None
+Haas_entry = None
+DMG_entry = None
 BearbeitungsdauerProg_entry = None
 Fremdbearbeitungsdauer_entry = None
 error_frame = None
@@ -46,7 +47,7 @@ def start_Planner(root, df_orders, data):
     Planner.main(root, df_orders, data)
 
 def get_all_data():
-    data = [None]*10
+    data = [None]*11
     # get the values from the entry boxes and lists
     data[0] = kw_entry.get()
     data[1] = date_entry.get()
@@ -56,22 +57,24 @@ def get_all_data():
         kunde = kunden_liste.get(kunden_liste.curselection()[0])
     data[3] = kunde
     data[4] = Liefertermin_entry.get()
-    Anlage = ""
-    if(len(Anlagen_liste.curselection())!=0):
-        Anlage = Anlagen_liste.get(Anlagen_liste.curselection()[0])
-    data[5] = Anlage
-    data[6] = Bearbeitungsdauer_entry.get()
-    data[7] = BearbeitungsdauerProg_entry.get()
-    data[8] = Fremdbearbeitungsdauer_entry.get()
-    data[9] = kundennummer_entry.get()
+    data[5] = Mazak_entry.get()
+    data[6] = Haas_entry.get()
+    data[7] = DMG_entry.get()
+    data[8] = BearbeitungsdauerProg_entry.get()
+    data[9] = Fremdbearbeitungsdauer_entry.get()
+    data[10] = kundennummer_entry.get()
     data[2] = data[2] + " / " + kundennummer_entry.get()
     return data
 
 def create_error_messages(error_kind):
     error_message = ""
     for error in error_kind:
-        if(error == "machine overload"):
-            error_message += "Der Auftrag kann nicht in der regulären Arbeitstzeit erledigt werden.\n\r"
+        if(error == "mazak overload"):
+            error_message += "Der Auftrag kann von Mazak nicht in der regulären Arbeitstzeit erledigt werden.\n\r"
+        if (error == "haas overload"):
+            error_message += "Der Auftrag kann von Haas nicht in der regulären Arbeitstzeit erledigt werden.\n\r"
+        if (error == "DMG overload"):
+            error_message += "Der Auftrag kann von DMG Mori nicht in der regulären Arbeitstzeit erledigt werden.\n\r"
         if(error == "human overload"):
             error_message += "Markus hat nicht genügend Zeit, um den Auftrag in der regulären Zeit zu erledigen.\n\r"
         if(error == "impossible delivery date"):
@@ -169,27 +172,29 @@ def BearbeitungsdauerProg(root):
 def Anlage(root):
     # create frame
     global Anlage_frame
-    global Bearbeitungsdauer_entry
-    global Anlagen_liste
+    global Mazak_entry
+    global Haas_entry
+    global DMG_entry
     Anlage_frame = tk.Frame(root)
     # create a label
     Bearbeitungsdauer_lable = tk.Label(Anlage_frame, text="Laufzeit:",font=("Helvetica", text_size))
-    # create a entry box
-    Bearbeitungsdauer_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
-    # place the label
-    Bearbeitungsdauer_lable.pack()
-    Bearbeitungsdauer_entry.pack()
-
     # create a label
-    Anlage_lable = tk.Label(Anlage_frame, text="Anlage:",font=("Helvetica", text_size))
-    # create a entry box
-    Anlagen_liste = tk.Listbox(Anlage_frame, height=3, width=8, selectmode=tk.EXTENDED,exportselection=False,font=("Helvetica", text_size))
-    Anlagen_liste.insert(1, "Mazak")
-    Anlagen_liste.insert(2, "Haas")
-    Anlagen_liste.insert(3, "DMG Mori")
-    # place the label and list
-    Anlage_lable.pack()
-    Anlagen_liste.pack()
+    Mazak_lable = tk.Label(Anlage_frame, text="Mazak",font=("Helvetica", text_size))
+    Haas_lable = tk.Label(Anlage_frame, text="Haas",font=("Helvetica", text_size))
+    DMG_lable = tk.Label(Anlage_frame, text="DMG Mori",font=("Helvetica", text_size))
+    # create a entry box for each lable
+    Mazak_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
+    Haas_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
+    DMG_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
+    # place the label
+    Bearbeitungsdauer_lable.grid(row=0,column=0,columnspan=2)
+    # place machine lable and entries in a grid
+    Mazak_lable.grid(row=1,column=0)
+    Haas_lable.grid(row=2,column=0)
+    DMG_lable.grid(row=3,column=0)
+    Mazak_entry.grid(row=1, column=1)
+    Haas_entry.grid(row=2, column=1)
+    DMG_entry.grid(row=3,column=1)
     # place the frame
     Anlage_frame.grid(row=1,column=1,padx=padx,pady=pady_bottom)
 

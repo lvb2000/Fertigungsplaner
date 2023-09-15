@@ -14,20 +14,19 @@ planner_size = 16
 arbeitsTag = 8
 
 # error list
-errors = ["machine overload","human overload","impossible delivery date","entries_missing","Fertigungsstart unvalid","Lieferdatum unvalid"]
+errors = ["mazak overload","haas overload","DMG overload","human overload","impossible delivery date","entries_missing","Fertigungsstart unvalid","Lieferdatum unvalid"]
 
 # orders catergories
 # Status: 0 = Order unfinished; 1 = Order finished
-order_categories = ['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Anlage',
-                    'Bearbeitungsdauer', 'BearbeitungsdauerProg', 'Fremdbearbeitungsdauer',
-                    'ProduktionsPlanung','Status','Placeholder1','Placeholder2','Placeholder3','Placeholder4','Placeholder5']
+order_categories = ['Kalenderwoche', 'Datum', 'Auftragsnummer', 'Kunde', 'Liefertermin', 'Mazak', 'Haas', 'DMG_Mori','ProgrammierDauer', 'Fremdbearbeitungsdauer',
+                    'ProduktionsPlanungMazak','ProduktionsPlanungHaas','ProduktionsPlanungDMG_Mori','Status','Placeholder1','Placeholder2','Placeholder3','Placeholder4','Placeholder5']
 
 def acceptable_error(error):
     # check if in error array there is either none or errors[0] or errors[1]
     if(error == None):
         return True
     for err in error:
-        if(err!=errors[0] and err!=errors[1]):
+        if(err!=errors[0] and err!=errors[1] and err!=errors[2] and err!=errors[3]):
             return False
     return True
 

@@ -4,7 +4,7 @@ import calendar
 import pandas as pd
 from General import data_path, errors, arbeitsTag
 
-def check_machine_overload(df_occupation,date, Liefertermin, Anlage,Bearbeitungsdauer):
+def check_machine_overload(df_occupation,date, Liefertermin,Anlage,Bearbeitungsdauer):
     # get maximum days to work on the order
     max_days = (datetime.datetime.strptime(Liefertermin, '%d.%m.%Y') - datetime.datetime.strptime(date, '%d.%m.%Y')).days
     availableHours = 0
@@ -48,8 +48,6 @@ def check_delivery_date(data):
     if(datetime.datetime.strptime(data[4], '%d.%m.%Y') < datetime.datetime.strptime(data[1], '%d.%m.%Y')):
         return True
     return False
-def check_human_overload(df_occupation,date, Liefertermin, BearbeitungsdauerProg):
-    return False
 
 def check_Fertigungsstart(data):
     # check if Fertigungsstart is a valid date in format dd.mm.yyyy
@@ -87,10 +85,18 @@ def main(error_kind, data):
         # append error to error_kind
         error_kind.append(errors[3])
         result = True
-    elif(check_machine_overload(df_occupation,data[1], data[4],data[5],data[6]) or
-    check_human_overload(df_occupation,data[1], data[4], data[7])):
-        # append error to error_kind
-        error_kind.append(errors[0])
-        result = True
+    else:
+        if(check_machine_overload(df_occupation,data[1], data[4],"Mazak",data[6])):
+            # append error to error_kind
+            error_kind.append(errors[0])
+            result = True
+        if(check_machine_overload(df_occupation,data[1], data[4],"Haas",data[7])):
+            # append error to error_kind
+            error_kind.append(errors[1])
+            result = True
+        if(check_machine_overload(df_occupation,data[1], data[4],"DMG Mori",data[8])):
+            # append error to error_kind
+            error_kind.append(errors[2])
+            result = True
 
     return result
