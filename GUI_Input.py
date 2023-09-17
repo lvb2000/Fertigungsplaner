@@ -42,9 +42,9 @@ Fremdbearbeitungsdauer_entry = None
 error_frame = None
 kundennummer_entry = None
 
-def start_Planner(root, df_orders, data):
-    destroy_descriptions()
-    Planner.main(root, df_orders, data)
+def start_Planner(root, data):
+    destroy_descriptions(root)
+    Planner.main(root, data)
 
 def get_all_data():
     data = [None]*11
@@ -57,9 +57,9 @@ def get_all_data():
         kunde = kunden_liste.get(kunden_liste.curselection()[0])
     data[3] = kunde
     data[4] = Liefertermin_entry.get()
-    data[5] = Mazak_entry.get()
-    data[6] = Haas_entry.get()
-    data[7] = DMG_entry.get()
+    data[5] = float(Mazak_entry.get())
+    data[6] = float(Haas_entry.get())
+    data[7] = float(DMG_entry.get())
     data[8] = BearbeitungsdauerProg_entry.get()
     data[9] = Fremdbearbeitungsdauer_entry.get()
     data[10] = kundennummer_entry.get()
@@ -101,9 +101,6 @@ def Hinzufuegen_button(root):
     if(len(date)==0):
         date = datetime.datetime.now().strftime("%d.%m.%Y")
     year = date.split(".")[2]
-    # if there is data in the csv file named (kw_year_oders.csv), add it to the entry box
-    if os.path.isfile(data_path+str(kw)+"_"+str(year)+"_orders.csv"):
-        df_orders = pd.read_csv(data_path+str(kw)+"_"+str(year)+"_orders.csv")
     # get all inputs
     data = get_all_data()
     # check if input is valid
@@ -116,7 +113,7 @@ def Hinzufuegen_button(root):
         error_label = tk.Label(error_frame, text=error_message, fg="red",font=("Helvetica", text_size))
         if General.acceptable_error(error_kind):
             # create a button to add the order anyway
-            error_button = tk.Button(error_frame, text="Trotzdem Hinzufügen", command=partial(start_Planner, root, df_orders, data),font=("Helvetica", text_size))
+            error_button = tk.Button(error_frame, text="Trotzdem Hinzufügen", command=partial(start_Planner, root, data),font=("Helvetica", text_size))
             # place the button
             error_button.pack(side=tk.BOTTOM)
         # place the label
@@ -124,8 +121,8 @@ def Hinzufuegen_button(root):
         # place the frame
         error_frame.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
     else:
-        destroy_descriptions()
-        Planner.main(root, df_orders, data)
+        destroy_descriptions(root)
+        Planner.main(root, data)
 
 def Hinzufuegen(root):
     global HinzufuegenButton_frame
@@ -183,9 +180,9 @@ def Anlage(root):
     Haas_lable = tk.Label(Anlage_frame, text="Haas",font=("Helvetica", text_size))
     DMG_lable = tk.Label(Anlage_frame, text="DMG Mori",font=("Helvetica", text_size))
     # create a entry box for each lable
-    Mazak_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
-    Haas_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
-    DMG_entry = tk.Entry(Anlage_frame, width=3,font=("Helvetica", text_size))
+    Mazak_entry = tk.Entry(Anlage_frame, width=5,font=("Helvetica", text_size))
+    Haas_entry = tk.Entry(Anlage_frame, width=5,font=("Helvetica", text_size))
+    DMG_entry = tk.Entry(Anlage_frame, width=5,font=("Helvetica", text_size))
     # place the label
     Bearbeitungsdauer_lable.grid(row=0,column=0,columnspan=2)
     # place machine lable and entries in a grid
@@ -439,7 +436,7 @@ def create_descriptions(root):
     FremdbearbeitungDauer(root)
     Hinzufuegen(root)
 
-def destroy_descriptions():
+def destroy_descriptions(root):
     if(kw_frame != None):
         kw_frame.destroy()
     if(date_frame != None):
@@ -462,10 +459,10 @@ def destroy_descriptions():
         error_frame.destroy()
     if(calendar_frame != None):
         calendar_frame.destroy()
-    Planner.destroy_planner()
+    Planner.destroy_planner(root)
 
 def main(root, on = True):
     if(on):
         create_descriptions(root)
     else:
-        destroy_descriptions()
+        destroy_descriptions(root)

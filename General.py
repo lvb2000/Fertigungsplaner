@@ -1,4 +1,5 @@
 import pandas as pd
+import datetime
 """ General Parameters for the whole Project"""
 
 # Mac Data path: /Users/lukas/Dokumente/Fertigungsplaner/Data/
@@ -40,3 +41,18 @@ def date1_before_date2(date1,date2):
         return True
     else:
         return False
+
+def get_weeks(start,end):
+    kw = []
+    # get the start date
+    start_date = datetime.datetime.strptime(start, '%d.%m.%Y')
+    # get the end date
+    end_date = datetime.datetime.strptime(end, '%d.%m.%Y')
+    # loop over all days
+    for i in range((end_date - start_date).days + 1):
+        # get the date of the day plus i
+        date = start_date + datetime.timedelta(days=i)
+        # get the kw of the date
+        kw.append(date.strftime("%V"))
+    # get the unique kw
+    return list(set(kw))

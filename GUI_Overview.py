@@ -126,7 +126,7 @@ def get_kunden_on_day(df_orders, date,machine):
             for entry in ProduktionsPlanung:
                 # check if entry[0] is equal to date
                 if(entry[0] == date):
-                    if(int(entry[1]) != 0):
+                    if(float(entry[1]) != 0):
                         if(int(entry[2])==1):
                             # append kunde to kunden
                             kunden.append(kunde)

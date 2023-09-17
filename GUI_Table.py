@@ -5,7 +5,7 @@ from functools import partial
 from tkinter import font
 
 import pandas as pd
-from General import data_path,text_size,list_size,order_categories,date1_before_date2,arbeitsTag
+from General import data_path,text_size,list_size,order_categories,date1_before_date2,arbeitsTag,get_weeks
 
 """Geometrics of tkinter"""
 padx=25
@@ -74,10 +74,32 @@ def delete_row(entry,root,index,df_data):
             df_occupation.loc[df_occupation['date'] == Tag[0], machine] += Tag[1]
     # save df_occupation
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
-    # delete row from data
-    df_data.drop(index, inplace=True)
-    # save data
-    df_data.to_csv(data_path+str(reset_kw)+"_"+str(reset_year)+'_orders.csv', index=False)
+    # get auftragsnummer
+    auftragsnummer = row[2]
+    # get all kw between data[1] and data[4]
+    kw = []
+    # get the start date
+    start_date = datetime.datetime.strptime(row[1], '%d.%m.%Y')
+    # get the end date
+    end_date = datetime.datetime.strptime(row[4], '%d.%m.%Y')
+    # loop over all days
+    for i in range((end_date - start_date).days + 1):
+        # get the date of the day plus i
+        date = start_date + datetime.timedelta(days=i)
+        # get the kw of the date
+        kw.append(date.strftime("%V"))
+    # get the unique kw
+    kw = list(set(kw))
+    # get the year of the order
+    year = datetime.datetime.strptime(row[1], '%d.%m.%Y').year
+    # for each kw read the csv file, append the new df and save it
+    for week in kw:
+        # read csv file
+        df = pd.read_csv(data_path + str(week) + "_" + str(year) + '_orders.csv')
+        # delete row from data with same auftragsnummer
+        df = df[df['Auftragsnummer'] != auftragsnummer]
+        # save df
+        df.to_csv(data_path + str(week) + "_" + str(year) + '_orders.csv', index=False)
     # destroy table
     destroy_table()
     # create table
@@ -91,17 +113,33 @@ def toggle_status(root,df_data,index,target_kw,target_year):
     df_data.loc[index, 'Status'] = 1 - df_data.loc[index, 'Status']
     # get todays date in format dd.mm.yyyy
     today = datetime.date.today().strftime("%d.%m.%Y")
+
+    kw = get_weeks(df_data.loc[index,'Datum'],df_data.loc[index, 'Liefertermin'])
+    # get auftragsnummer at index
+    auftragsnummer = df_data.loc[index, 'Auftragsnummer']
     # update occupation
     factor = None
     if(df_data.loc[index, 'Status'] == 1):
         factor = 1
         # add today to df_occupation placeholder 1
         df_data.loc[index, 'Placeholder1'] = today
+        for week in kw:
+            # read csv file
+            df = pd.read_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv')
+            # update produktionsplanung+machine at auftragsnummer
+            df.loc[df['Auftragsnummer'] == auftragsnummer, 'Placeholder1'] = today
+            # save df
+            df.to_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv', index=False)
     else:
         factor = -1
         today = df_data.loc[index, 'Placeholder1']
-        # remove today from df_occupation placeholder 1
-        df_data.loc[index, 'Placeholder1'] = ""
+        for week in kw:
+            # read csv file
+            df = pd.read_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv')
+            # update produktionsplanung+machine at auftragsnummer
+            df.loc[df['Auftragsnummer'] == auftragsnummer, 'Placeholder1'] = ""
+            # save df
+            df.to_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv', index=False)
     # get the occuption csv as df
     df_occupation = pd.read_csv(data_path + "occupation.csv")
     # get machines array
@@ -124,11 +162,18 @@ def toggle_status(root,df_data,index,target_kw,target_year):
                 if(df_occupation.loc[df_occupation['date'] == Tag[0], machine].values[0] > arbeitsTag):
                     df_occupation.loc[df_occupation['date'] == Tag[0], machine] = arbeitsTag
         # update ProduktionsPlanung
-        df_data.loc[index, 'ProduktionsPlanung'+machine] = str(ProduktionsPlanung)
+        for week in kw:
+            # read csv file
+            df = pd.read_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv')
+            # update produktionsplanung+machine at auftragsnummer
+            df.loc[df['Auftragsnummer'] == auftragsnummer, 'ProduktionsPlanung'+machine] = str(ProduktionsPlanung)
+            df.loc[df['Auftragsnummer'] == auftragsnummer, 'Status'] = 1 - df.loc[df['Auftragsnummer'] == auftragsnummer, 'Status']
+            # save df
+            df.to_csv(data_path + str(week) + "_" + str(target_year) + '_orders.csv', index=False)
     # save df_occupation
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
-    # save data
-    df_data.to_csv(data_path+str(target_kw)+"_"+str(target_year)+'_orders.csv', index=False)
+
+
     reset = True
     reset_kw = target_kw
     reset_year = target_year
@@ -191,16 +236,16 @@ def create_table(root):
         # Iterate through data rows using iterrows()
         for index, row in df_data.iterrows():
             # create a label for each data entry in row
-            label = tk.Label(frame, text=row[0],font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row[1],font=("Helvetica", list_size))
             label.grid(row=index+2, column=0,padx=padx)
-            label = tk.Label(frame, text=row[1], font=("Helvetica", list_size))
-            label.grid(row=index + 2, column=1, padx=padx)
             label = tk.Label(frame, text=row[2], font=("Helvetica", list_size))
-            label.grid(row=index + 2, column=2, padx=padx)
+            label.grid(row=index + 2, column=1, padx=padx)
             label = tk.Label(frame, text=row[3], font=("Helvetica", list_size))
-            label.grid(row=index + 2, column=3, padx=padx)
+            label.grid(row=index + 2, column=2, padx=padx)
             label = tk.Label(frame, text=row[4], font=("Helvetica", list_size))
-            label.grid(row=index + 2, column=4, padx=padx)
+            label.grid(row=index + 2, column=3, padx=padx)
+            #label = tk.Label(frame, text=row[5], font=("Helvetica", list_size))
+            #label.grid(row=index + 2, column=4, padx=padx)
             text_name=""
             text_value=""
             if(row[5]!=0):
@@ -213,10 +258,12 @@ def create_table(root):
                 text_name+="DMG Mori"
                 text_value+=str(row[7])
             label = tk.Label(frame, text=text_name, font=("Helvetica", list_size), wraplength=100)
-            label.grid(row=index + 2, column=5, padx=padx)
+            label.grid(row=index + 2, column=4, padx=padx)
             label = tk.Label(frame, text=text_value, font=("Helvetica", list_size), wraplength=100)
-            label.grid(row=index + 2, column=6, padx=padx)
+            label.grid(row=index + 2, column=5, padx=padx)
             label = tk.Label(frame, text=row[8], font=("Helvetica", list_size))
+            label.grid(row=index + 2, column=6, padx=padx)
+            label = tk.Label(frame, text=row[9], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=7, padx=padx)
             if(row[13]==1 or date1_before_date2(row[4],datetime.date.today().strftime("%d.%m.%Y"))):
                 Status.append(tk.IntVar(value=1))

@@ -48,7 +48,7 @@ def add_missing_days(df_occupation, Produktionsstart, Liefertermin):
                 df_occupation.loc[len(df_occupation)] = [date, arbeitsTag,arbeitsTag,arbeitsTag,arbeitsTag]
     return periode
 
-def destroy_planner():
+def destroy_planner(root):
     global frame
     global autofill_button
     global save_button
@@ -65,8 +65,7 @@ def destroy_planner():
     if(machine_label != None):
         machine_label.destroy()
 
-
-def weiter_data(root,df_occupation,df_orders,data):
+def weiter_data(root,df_occupation,data):
     global current_entries
     global df_new
     global machine
@@ -88,9 +87,9 @@ def weiter_data(root,df_occupation,df_orders,data):
     # reset Laufzeit
     Laufzeit = None
     # open Planner Handler
-    Planner_Handler(root, df_orders,df_occupation, data)
+    Planner_Handler(root, df_occupation, data)
 
-def save_data(df_occupation,df_orders,data):
+def save_data(root,df_occupation,data):
     global current_entries
     global df_new
     Produktionsplanung = []
@@ -102,16 +101,39 @@ def save_data(df_occupation,df_orders,data):
             Produktionsplanung.append([date,entry,1])
     # append Produktionsplanung to df_new
     df_new.loc[0, 'ProduktionsPlanung'+machine] = str(Produktionsplanung)
-    # concat df_new to df_orders
-    df_orders = pd.concat([df_orders, df_new], ignore_index=True)
-    # get year of the order as seperate integer
+    # get all kw between data[1] and data[4]
+    kw = []
+    # get the start date
+    start_date = datetime.datetime.strptime(data[1], '%d.%m.%Y')
+    # get the end date
+    end_date = datetime.datetime.strptime(data[4], '%d.%m.%Y')
+    # loop over all days
+    for i in range((end_date - start_date).days + 1):
+        # get the date of the day plus i
+        date = start_date + datetime.timedelta(days=i)
+        # get the kw of the date
+        kw.append(date.strftime("%V"))
+    # get the unique kw
+    kw = list(set(kw))
+    # get the year of the order
     year = datetime.datetime.strptime(data[1], '%d.%m.%Y').year
-    # convert the dataframe to a csv file
-    df_orders.to_csv(data_path + str(data[0]) + "_" + str(year) + '_orders.csv', index=False)
+    # for each kw read the csv file, append the new df and save it
+    for week in kw:
+        # check if csv exists
+        if os.path.isfile(data_path + str(week) + "_" + str(year) + '_orders.csv'):
+            # read csv file
+            df = pd.read_csv(data_path + str(week) + "_" + str(year) + '_orders.csv')
+        else:
+            # create a new dataframe
+            df = pd.DataFrame(columns=order_categories)
+        # append df_new to df
+        df = pd.concat([df, df_new], ignore_index=True)
+        # save df
+        df.to_csv(data_path + str(week) + "_" + str(year) + '_orders.csv', index=False)
     # safe df_occupation in a csv file
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
     # destroy all Planer widgets
-    destroy_planner()
+    destroy_planner(root)
     return
 
 def reset_widget(df_occupation,index,date):
@@ -127,7 +149,7 @@ def reset_widget(df_occupation,index,date):
     df_occupation.loc[df_occupation['date'] == date, machine] += current_value
 
 
-def on_enter_pressed(root,df_orders,df_occupation,index,date,data,event):
+def on_enter_pressed(root,df_occupation,index,date,data,event):
     global hours_left_label
     global Laufzeit
     global save_button
@@ -137,7 +159,7 @@ def on_enter_pressed(root,df_orders,df_occupation,index,date,data,event):
     global current_entries
 
     # get user input
-    user_input = int(time_entries[index].get())
+    user_input = float(time_entries[index].get())
     # reset widges
     reset_widget(df_occupation,index,date)
     # limit user input to Laufzeit
@@ -158,7 +180,7 @@ def on_enter_pressed(root,df_orders,df_occupation,index,date,data,event):
         hours_left_label.config(text="Noch " + str(Laufzeit) + " Stunden übrig.")
     # check if save is possible
     if (Laufzeit <= 0):
-        Planner_Handler(root, df_orders,df_occupation, data)
+        Planner_Handler(root, df_occupation, data)
 
 
 def reset_all_widgets(df_occupation,periode):
@@ -178,7 +200,7 @@ def reset_all_widgets(df_occupation,periode):
         available_time_labels[i].config(text=str(available_time)+" [h]")
         # reset current entry
         current_entries[i] = 0
-def autofill(root,df_orders,df_occupation,data,periode):
+def autofill(root,df_occupation,data,periode,index):
     global hours_left_label
     global Laufzeit
     global save_button
@@ -189,7 +211,7 @@ def autofill(root,df_orders,df_occupation,data,periode):
 
     # reset
     reset_all_widgets(df_occupation,periode)
-    Laufzeit = int(copy.copy(data[6]))
+    Laufzeit = float(copy.copy(data[index]))
     # set all days
     for i,date in enumerate(periode):
         # get the available time for the machine
@@ -213,7 +235,8 @@ def autofill(root,df_orders,df_occupation,data,periode):
         # update the laufzeit
         Laufzeit -= update_value
         if (Laufzeit <= 0):
-            Planner_Handler(root, df_orders,df_occupation, data)
+            Planner_Handler(root,df_occupation, data)
+            break
     # Update the text of the label
     if hours_left_label != None:
         hours_left_label.config(text="Noch " + str(Laufzeit) + " Stunden übrig.")
@@ -232,7 +255,7 @@ def get_occupation():
     if os.path.isfile(data_path+"occupation.csv"):
         df = pd.read_csv(data_path + "occupation.csv")
     return df
-def Planner(root, df_orders,df_occupation,data,data_index):
+def Planner(root,df_occupation,data,data_index):
     global hours_left_label
     global Laufzeit
     global autofill_button
@@ -244,7 +267,7 @@ def Planner(root, df_orders,df_occupation,data,data_index):
     global current_entries
 
     # Laufzeit
-    Laufzeit = int(copy.copy(data[data_index]))
+    Laufzeit = float(copy.copy(data[data_index]))
     # reset all arrays
     reset_arrays()
     # built tkinter widgets
@@ -252,7 +275,7 @@ def Planner(root, df_orders,df_occupation,data,data_index):
     # Hours left frame
     hours_left_frame = tk.Frame(frame)
     # make a label for the hours left
-    hours_left_label = tk.Label(hours_left_frame, text="Noch " + str(data[6]) + " Stunden übrig.", font=("Helvetica", int(planner_size*1.5)))
+    hours_left_label = tk.Label(hours_left_frame, text="Noch " + str(data[data_index]) + " Stunden übrig.", font=("Helvetica", int(planner_size*1.5)))
     hours_left_label.pack()
     # make frame for the grid
     grid_frame = tk.Frame(frame)
@@ -272,7 +295,7 @@ def Planner(root, df_orders,df_occupation,data,data_index):
         # get a entry for inputing time
         time_entry = tk.Entry(grid_frame, width=3, font=("Helvetica", planner_size))
         # Bind the Enter key (Return) to the function
-        time_entry.bind('<Return>', partial(on_enter_pressed,root,df_orders,df_occupation,i,date,data))
+        time_entry.bind('<Return>', partial(on_enter_pressed,root,df_occupation,i,date,data))
         # place all tkinter widgets
         offset = 5
         weekday_label.grid(row=int(i%8), column=int(i/8)*offset, padx=padx, pady=pady)
@@ -290,10 +313,10 @@ def Planner(root, df_orders,df_occupation,data,data_index):
     grid_frame.pack(side=tk.BOTTOM)
     frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     # add button to autofill the planner
-    autofill_button = tk.Button(root, text="Autom. Füllen", command=partial(autofill,root,df_orders,df_occupation,data,periode), font=("Helvetica", planner_size))
+    autofill_button = tk.Button(root, text="Autom. Füllen", command=partial(autofill,root,df_occupation,data,periode,data_index), font=("Helvetica", planner_size))
     autofill_button.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
 
-def Planner_Handler(root, df_orders,df_occupation, data):
+def Planner_Handler(root,df_occupation, data):
     global machine
     global save_button
     global weiter_button
@@ -305,25 +328,25 @@ def Planner_Handler(root, df_orders,df_occupation, data):
         machine_label = tk.Label(root, text="Mazak", font=("Helvetica", 28))
         machine_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
         # convert data array to only need entries for the planner
-        Planner(root, df_orders,df_occupation, data, index)
+        Planner(root,df_occupation, data, index)
     if(machine == "Haas" and Laufzeit==None):
         index = 6
-        destroy_planner()
+        destroy_planner(root)
         # create Label for the machine
         machine_label = tk.Label(root, text="Haas", font=("Helvetica", 28))
         machine_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
-        Planner(root, df_orders,df_occupation, data, index)
+        Planner(root, df_occupation, data, index)
     if(machine == "DMG_Mori" and Laufzeit==None):
         index = 7
-        destroy_planner()
+        destroy_planner(root)
         # create Label for the machine
         machine_label = tk.Label(root, text="DMG_Mori", font=("Helvetica", 28))
         machine_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
-        Planner(root, df_orders,df_occupation, data, index)
+        Planner(root, df_occupation, data, index)
 
     if((machine == "Mazak" or machine=="Haas") and Laufzeit <= 0):
         # create weiter button
-        weiter_button = tk.Button(root, text="Weiter", command=partial(weiter_data,root, df_occupation, df_orders, data),
+        weiter_button = tk.Button(root, text="Weiter", command=partial(weiter_data,root, df_occupation, data),
                                   font=("Helvetica", planner_size))
         weiter_button.place(relx=0.8, rely=0.9, anchor=tk.CENTER)
     else:
@@ -331,7 +354,7 @@ def Planner_Handler(root, df_orders,df_occupation, data):
             weiter_button.destroy()
     if (machine == "DMG_Mori" and Laufzeit <= 0):
         # create save button
-        save_button = tk.Button(root, text="Speichern", command=partial(save_data, df_occupation, df_orders, data),
+        save_button = tk.Button(root, text="Speichern", command=partial(save_data, root,df_occupation,  data),
                                   font=("Helvetica", planner_size))
         save_button.place(relx=0.8, rely=0.9, anchor=tk.CENTER)
     else:
@@ -339,18 +362,15 @@ def Planner_Handler(root, df_orders,df_occupation, data):
             save_button.destroy()
 
 
-def main(root, df_orders, data):
+def main(root, data):
     global machine
     global df_new
     machine = "Mazak"
     # set fixed values in df_new
-    df_new = None
     # create a new datafram with the new values
     df_new = pd.DataFrame([[data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],data[8],data[9],None,None,None,0,"","","","",""]],
                           columns=order_categories)
     # get occupation statistics
     df_occupation = get_occupation()
     # built Planner
-    Planner_Handler(root, df_orders,df_occupation, data)
-    # update the root to fix entry widget bug (not showing up)
-    root.update_idletasks()
+    Planner_Handler(root, df_occupation, data)
