@@ -8,7 +8,7 @@ import pandas as pd
 from General import data_path,text_size,list_size,order_categories,date1_before_date2,arbeitsTag,get_weeks
 
 """Geometrics of tkinter"""
-padx=25
+padx=0
 
 """Keep Log of the displayed week"""
 current_kw = datetime.date.today().isocalendar()[1]
@@ -75,13 +75,13 @@ def delete_row(entry,root,index,df_data):
     # save df_occupation
     df_occupation.to_csv(data_path + "occupation.csv", index=False)
     # get auftragsnummer
-    auftragsnummer = row[2]
+    auftragsnummer = row.iloc[2]
     # get all kw between data[1] and data[4]
     kw = []
     # get the start date
-    start_date = datetime.datetime.strptime(row[1], '%d.%m.%Y')
+    start_date = datetime.datetime.strptime(row.iloc[1], '%d.%m.%Y')
     # get the end date
-    end_date = datetime.datetime.strptime(row[4], '%d.%m.%Y')
+    end_date = datetime.datetime.strptime(row.iloc[4], '%d.%m.%Y')
     # loop over all days
     for i in range((end_date - start_date).days + 1):
         # get the date of the day plus i
@@ -91,7 +91,7 @@ def delete_row(entry,root,index,df_data):
     # get the unique kw
     kw = list(set(kw))
     # get the year of the order
-    year = datetime.datetime.strptime(row[1], '%d.%m.%Y').year
+    year = datetime.datetime.strptime(row.iloc[1], '%d.%m.%Y').year
     # for each kw read the csv file, append the new df and save it
     for week in kw:
         # read csv file
@@ -219,7 +219,7 @@ def create_table(root):
         label.grid(row=0, column=i,padx=padx)
 
     # draw a line between categories and data
-    separator = tk.Canvas(frame, width=1450, height=2, bg="black")
+    separator = tk.Canvas(frame, width=1500, height=2, bg="black")
     separator.grid(row=1, column=0, columnspan=10)
 
     # narrow line spacing font
@@ -236,36 +236,45 @@ def create_table(root):
         # Iterate through data rows using iterrows()
         for index, row in df_data.iterrows():
             # create a label for each data entry in row
-            label = tk.Label(frame, text=row[1],font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[1],font=("Helvetica", list_size))
             label.grid(row=index+2, column=0,padx=padx)
-            label = tk.Label(frame, text=row[2], font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[2], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=1, padx=padx)
-            label = tk.Label(frame, text=row[3], font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[3], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=2, padx=padx)
-            label = tk.Label(frame, text=row[4], font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[4], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=3, padx=padx)
             #label = tk.Label(frame, text=row[5], font=("Helvetica", list_size))
             #label.grid(row=index + 2, column=4, padx=padx)
             text_name=""
             text_value=""
-            if(row[5]!=0):
-                text_name="Mazak\n"
-                text_value=str(row[5])+"\n"
-            if(row[6]!=0):
-                text_name+="Haas\n"
-                text_value+=str(row[6])+"\n"
-            if(row[7]!=0):
+            first=False
+            if(row.iloc[5]!=0):
+                text_name="Mazak"
+                text_value=str(row.iloc[5])
+                first=True
+            if(row.iloc[6]!=0):
+                if(first):
+                    text_name+="\n"
+                    text_value+="\n"
+                first=True
+                text_name+="Haas"
+                text_value+=str(row.iloc[6])
+            if(row.iloc[7]!=0):
+                if(first):
+                    text_name+="\n"
+                    text_value+="\n"
                 text_name+="DMG Mori"
-                text_value+=str(row[7])
+                text_value+=str(row.iloc[7])
             label = tk.Label(frame, text=text_name, font=("Helvetica", list_size), wraplength=100)
             label.grid(row=index + 2, column=4, padx=padx)
             label = tk.Label(frame, text=text_value, font=("Helvetica", list_size), wraplength=100)
             label.grid(row=index + 2, column=5, padx=padx)
-            label = tk.Label(frame, text=row[8], font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[8], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=6, padx=padx)
-            label = tk.Label(frame, text=row[9], font=("Helvetica", list_size))
+            label = tk.Label(frame, text=row.iloc[9], font=("Helvetica", list_size))
             label.grid(row=index + 2, column=7, padx=padx)
-            if(row[13]==1 or date1_before_date2(row[4],datetime.date.today().strftime("%d.%m.%Y"))):
+            if(row.iloc[13]==1 or date1_before_date2(row.iloc[4],datetime.date.today().strftime("%d.%m.%Y"))):
                 Status.append(tk.IntVar(value=1))
             else:
                 Status.append(tk.IntVar(value=0))

@@ -43,7 +43,7 @@ def add_missing_days(df_occupation, Produktionsstart, Liefertermin):
             # insert the day in df at the right index and fill the value for machine and human with 8
             # check if the day is a sunday
             if (calendar.day_name[datetime.datetime.strptime(date, '%d.%m.%Y').weekday()] == "Sunday"):
-                df_occupation.loc[len(df_occupation)] = [date, 0,0,0,0]
+                df_occupation.loc[len(df_occupation)] = [date, 0.0,0.0,0.0,0.0]
             else:
                 df_occupation.loc[len(df_occupation)] = [date, arbeitsTag,arbeitsTag,arbeitsTag,arbeitsTag]
     return periode
@@ -315,6 +315,8 @@ def Planner(root,df_occupation,data,data_index):
     # add button to autofill the planner
     autofill_button = tk.Button(root, text="Autom. Füllen", command=partial(autofill,root,df_occupation,data,periode,data_index), font=("Helvetica", planner_size))
     autofill_button.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
+    # update the root to fix entry widget bug (not showing up)
+    root.update_idletasks()
 
 def Planner_Handler(root,df_occupation, data):
     global machine
@@ -324,9 +326,14 @@ def Planner_Handler(root,df_occupation, data):
     global machine_label
     if(machine == "Mazak" and Laufzeit==None):
         index = 5
+        destroy_planner(root)
+        # update the root to fix entry widget bug (not showing up)
+        root.update_idletasks()
         # create Label for the machine
         machine_label = tk.Label(root, text="Mazak", font=("Helvetica", 28))
         machine_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
+        # update the root to fix entry widget bug (not showing up)
+        root.update_idletasks()
         # convert data array to only need entries for the planner
         Planner(root,df_occupation, data, index)
     if(machine == "Haas" and Laufzeit==None):
@@ -365,7 +372,12 @@ def Planner_Handler(root,df_occupation, data):
 def main(root, data):
     global machine
     global df_new
+    global Laufzeit
     machine = "Mazak"
+    # reset all arrays
+    reset_arrays()
+    # reset Laufzeit
+    Laufzeit = None
     # set fixed values in df_new
     # create a new datafram with the new values
     df_new = pd.DataFrame([[data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],data[8],data[9],None,None,None,0,"","","","",""]],

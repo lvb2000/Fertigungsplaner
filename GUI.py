@@ -3,7 +3,7 @@ from functools import partial
 import GUI_Input
 import GUI_Table
 import GUI_Overview
-from General import text_size
+from General import text_size,data_path
 
 """Create a button to quit the program."""
 def create_exit_button(root):
@@ -58,12 +58,20 @@ def create_overview_button(root):
 def main():
     # create the Tk object
     root = tk.Tk()
+    # set cnc logo in background with high transparency (alpha)
+    cnc_logo = tk.PhotoImage(file=data_path+"cncLogoLowOp.png")
+    cnc_logo_label = tk.Label(root, image=cnc_logo)
+    cnc_logo_label.image = cnc_logo
+    cnc_logo_label.place(x=0, y=0, relwidth=1, relheight=1)
     # create a button to quit the program
     create_exit_button(root)
     # create buttons to switch between different panels
     create_input_button(root)
     create_table_button(root)
     create_overview_button(root)
+    # set the title of the window
+    root.title("CNC Metzger")
+
     #increase the starting size of the window
     root.geometry("1920x1080")
     # run the GUI

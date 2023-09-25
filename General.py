@@ -12,7 +12,7 @@ list_size = 14
 planner_size = 16
 
 # Length of general working day in hours
-arbeitsTag = 8
+arbeitsTag = 8.0
 
 # error list
 errors = ["mazak overload","haas overload","DMG overload","human overload","impossible delivery date","entries_missing","Fertigungsstart unvalid","Lieferdatum unvalid"]

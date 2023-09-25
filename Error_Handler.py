@@ -29,10 +29,10 @@ def check_machine_overload(df_occupation,date, Liefertermin,Anlage,Bearbeitungsd
             # insert the day in df at the right index and fill the value for machine and human with 8
             # check if the day is a sunday
             if (calendar.day_name[datetime.datetime.strptime(date, '%d.%m.%Y').weekday()] == "Sunday"):
-                df_occupation.loc[len(df_occupation)] = [date, 0,0,0, 0]
+                df_occupation.loc[len(df_occupation)] = [date, 0.0,0.0,0.0, 0.0]
             else:
                 df_occupation.loc[len(df_occupation)] = [date, arbeitsTag,arbeitsTag,arbeitsTag, arbeitsTag]
-                availableHours += 8
+                availableHours += 8.0
         i += 1
     return False
 
@@ -94,7 +94,7 @@ def main(error_kind, data):
             # append error to error_kind
             error_kind.append(errors[1])
             result = True
-        if(check_machine_overload(df_occupation,data[1], data[4],"DMG Mori",data[8])):
+        if(check_machine_overload(df_occupation,data[1], data[4],"DMG_Mori",data[8])):
             # append error to error_kind
             error_kind.append(errors[2])
             result = True
