@@ -1,8 +1,6 @@
 import tkinter as tk
 from functools import partial
-import GUI_Input
-import GUI_Table
-import GUI_Overview
+from FrontEnd import GUI_Table, GUI_Overview, GUI_Input
 from General import text_size,data_path
 
 """Create a button to quit the program."""
@@ -16,9 +14,9 @@ def create_exit_button(root):
 """Create a button to switch between different panels."""
 def input_switch(root):
     panel_mode = "input"
-    GUI_Input.main(root,False)
-    GUI_Table.main(root,False)
-    GUI_Overview.main(root,False)
+    GUI_Input.main(root, False)
+    GUI_Table.main(root, False)
+    GUI_Overview.main(root, False)
     GUI_Input.main(root)
 
 def create_input_button(root):
@@ -30,9 +28,9 @@ def create_input_button(root):
 
 def table_switch(root):
     panel_mode = "table"
-    GUI_Input.main(root,False)
-    GUI_Table.main(root,False)
-    GUI_Overview.main(root,False)
+    GUI_Input.main(root, False)
+    GUI_Table.main(root, False)
+    GUI_Overview.main(root, False)
     GUI_Table.main(root)
 
 def create_table_button(root):
@@ -44,9 +42,9 @@ def create_table_button(root):
 
 def overview_switch(root):
     panel_mode = "overview"
-    GUI_Input.main(root,False)
-    GUI_Table.main(root,False)
-    GUI_Overview.main(root,False)
+    GUI_Input.main(root, False)
+    GUI_Table.main(root, False)
+    GUI_Overview.main(root, False)
     GUI_Overview.main(root)
 def create_overview_button(root):
     #create a button
@@ -55,7 +53,7 @@ def create_overview_button(root):
     overview.pack()
     overview.place(relx=0.25, rely=0.02)
 
-def main():
+def start_gui():
     # create the Tk object
     root = tk.Tk()
     # set cnc logo in background with high transparency (alpha)

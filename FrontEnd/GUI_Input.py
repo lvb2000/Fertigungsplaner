@@ -4,10 +4,11 @@ import datetime
 import calendar
 from functools import partial
 import pandas as pd
-from General import data_path, text_size, order_categories
+from General import data_path, text_size
 import General
-import Error_Handler
-import Planner
+from BackEnd import Error_Handler
+from FrontEnd import GUI_Planner
+from BackEnd.Auftrag import Auftrag
 
 month, year = datetime.datetime.now().month, datetime.datetime.now().year
 calendar_active = False
@@ -44,9 +45,9 @@ kundennummer_entry = None
 
 def start_Planner(root, data):
     destroy_descriptions(root)
-    Planner.main(root, data)
+    Planner.start_gui(root, data)
 
-def get_all_data():
+def get_auftrag():
     data = [None]*11
     # get the values from the entry boxes and lists
     data[0] = kw_entry.get()
@@ -64,7 +65,8 @@ def get_all_data():
     data[9] = Fremdbearbeitungsdauer_entry.get()
     data[10] = kundennummer_entry.get()
     data[2] = data[2] + " / " + kundennummer_entry.get()
-    return data
+    auftrag = Auftrag(data)
+    return auftrag
 
 def create_error_messages(error_kind):
     error_message = ""
@@ -90,19 +92,8 @@ def create_error_messages(error_kind):
 def Hinzufuegen_button(root):
     global error_frame
     error_kind = []
-    # get csv called "orders.csv" file from data folder if it exists
-    df_orders = pd.DataFrame(columns=order_categories)
-    # get KW from entry box
-    kw = kw_entry.get()
-    if(len(kw)==0):
-        kw = datetime.date.today().isocalendar()[1]
-    # get year from date entry box
-    date = date_entry.get()
-    if(len(date)==0):
-        date = datetime.datetime.now().strftime("%d.%m.%Y")
-    year = date.split(".")[2]
     # get all inputs
-    data = get_all_data()
+    auftrag = get_auftrag()
     # check if input is valid
     if Error_Handler.main(error_kind, data):
         # create error frame
@@ -122,7 +113,7 @@ def Hinzufuegen_button(root):
         error_frame.place(relx=0.5, rely=0.9, anchor=tk.CENTER)
     else:
         destroy_descriptions(root)
-        Planner.main(root, data)
+        Planner.start_gui(root, data)
 
 def Hinzufuegen(root):
     global HinzufuegenButton_frame
